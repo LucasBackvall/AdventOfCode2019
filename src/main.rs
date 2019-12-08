@@ -1,8 +1,11 @@
 use std::fs;
 use std::env;
 
+mod parser;
 mod solver;
 mod day1;
+mod day2;
+mod ic_computer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -11,7 +14,6 @@ fn main() {
     let num_threads: usize = args[3][..].parse::<usize>().unwrap();
     
     let input = get_input(problem);
-    let data = parse(input);
 
     
     let solution;
@@ -19,14 +21,19 @@ fn main() {
         (1, 1) =>
             solution = solver::sum(
                 num_threads,
-                data,
+                parser::parse_int(input),
                 &day1::solve_a
             ),
         (1, 2) =>
             solution = solver::sum(
                 num_threads,
-                data,
+                parser::parse_int(input),
                 &day1::solve_b
+            ),
+        (2, 1) =>
+            solution = solver::given_ic(
+                &day2::solve_a,
+                parser::parse_ic(input)
             ),
         _ => return
     }
@@ -37,19 +44,4 @@ fn main() {
 fn get_input(n: usize) -> String {
     let addr = format!("input/day{}.txt", n.to_string());
     return fs::read_to_string(addr).expect("failed to read file");
-}
-
-fn parse(inp: String) -> Vec<isize> {
-    let mut output = Vec::new();
-    let split = inp.split('\n');
-    for row in split {
-        if row == "" {
-            continue;
-        }
-        output.push(
-            row.parse::<isize>().unwrap()
-        );
-    }
-    
-    output
 }

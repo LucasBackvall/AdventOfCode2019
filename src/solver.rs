@@ -1,5 +1,11 @@
 use std::thread;
 
+pub fn given_ic<F>(solution: F, data: Vec<isize>) -> isize
+where F: FnOnce(Vec<isize>) -> isize
+{
+    solution(data)
+}
+
 pub fn sum<F>(
     num_threads: usize, 
     input: Vec<isize>, 
