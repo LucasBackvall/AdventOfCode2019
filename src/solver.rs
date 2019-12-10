@@ -1,15 +1,14 @@
 use std::thread;
 
-pub fn sum<F>(
+pub fn int_range<F>(
     num_threads: usize, 
     input: Vec<isize>, 
     solution: F
 ) -> isize
-where F: FnOnce(isize) -> isize + Send + Copy + 'static
+where F: FnOnce(Vec<isize>) -> isize + Send + Copy + 'static
 {
     if num_threads < 2 {
-        sum_thread(input, solution)
-        
+        solution(input)
     } else {
         let mut threads = Vec::new();
         
@@ -29,7 +28,7 @@ where F: FnOnce(isize) -> isize + Send + Copy + 'static
             
             threads.push(
                 thread::spawn(move || -> isize {
-                    sum_thread(slice, solution)
+                    solution(slice)
                 })
             );
         }
@@ -41,15 +40,4 @@ where F: FnOnce(isize) -> isize + Send + Copy + 'static
         
         sum
     }
-}
-
-fn sum_thread<F>(inp: Vec<isize>, solution: F) -> isize
-    where F: FnOnce(isize) -> isize + Send + Copy + 'static
-{
-    let mut sum = 0;
-    for row in inp {
-        sum = sum + solution(row);
-    }
-    
-    sum
 }
