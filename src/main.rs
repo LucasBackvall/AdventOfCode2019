@@ -1,5 +1,6 @@
 use std::fs;
 use std::env;
+use std::ops::Range;
 
 mod solver;
 mod day1;
@@ -16,13 +17,13 @@ fn main() {
     let solution;
     match (problem, subproblem) {
         (1, 1) =>
-            solution = solver::int_range(
+            solution = solver::int_vector(
                 num_threads,
                 parse(input),
                 &day1::solve_a
             ),
         (1, 2) =>
-            solution = solver::int_range(
+            solution = solver::int_vector(
                 num_threads,
                 parse(input),
                 &day1::solve_b
@@ -66,13 +67,14 @@ fn parse(inp: String) -> Vec<isize> {
     output
 }
 
-fn get_range(inp: String) -> Vec<isize> {
+fn get_range(inp: String) -> Range<isize> {
     let input: Vec<&str> = inp.split('\n').collect();
     let params: Vec<&str> = input[0].split('-').collect();
     
     let a = params[0].parse::<isize>().unwrap();
     let b = params[1].parse::<isize>().unwrap();
-    (a..b).collect()
+    
+    a..b
 }
 
 

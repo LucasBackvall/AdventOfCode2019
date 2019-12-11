@@ -1,50 +1,37 @@
 use std::fmt;
+use std::ops::Range;
 
-pub fn stupid(input: Vec<isize>) -> isize {
+pub fn solve_a(input: Range<isize>) -> isize
+{
+    println!("Thread start @ {}..{}", input.start, input.end);
+    run(input, false)
+}
+
+pub fn solve_b(input: Range<isize>) -> isize
+{
+    println!("Thread start @ {}..{}", input.start, input.end);
+    run(input, true)
+}
+
+fn run(input: Range<isize>, only_double: bool) -> isize
+{
     let mut sum = 0;
-    for int in input {
-        if Password::password(int).valid(true) {
+    let mut lower = input.start;
+
+    while lower < input.end {
+        let pw = Password::password(lower);
+        if pw.valid(only_double) {
             sum = sum + 1;
         }
+        
+        lower = pw.next();
     }
     
-    println!("END sum: {}", sum);
     sum
 }
 
-pub fn solve_a(input: Vec<isize>) -> isize {
-    println!("thread start @ {}", input[0]);
-    rec(&input[..], false, 0)
-}
-
-pub fn solve_b(input: Vec<isize>) -> isize {
-    println!("thread start @ {}", input[0]);
-    rec(&input[..], true, 0)
-}
-
-fn rec(input: &[isize], only_double: bool, sum: isize) -> isize {
-    let slice_len = input.len();
-    if slice_len == 0 {
-        return sum;
-    }
-    
-    let first = input[0];
-    let curr = Password::password(first);
-    let next = curr.next();
-    
-    if next - first > slice_len as isize {
-        println!("END fist: {}, next: {}, sum: {}", first, next, sum);
-        return sum;
-    }
-    
-    if curr.valid(only_double) {
-        rec(&input[(next - first) as usize..], only_double, sum + 1)
-    } else {
-        rec(&input[(next - first) as usize..], only_double, sum)
-    }
-}
-
-struct Password {
+struct Password
+{
     dgt_0: isize,
     dgt_1: isize,
     dgt_2: isize,
@@ -53,7 +40,8 @@ struct Password {
     dgt_5: isize
 }
 
-impl Password {
+impl Password
+{
     pub fn password(inp: isize) -> Password {
         Password {
             dgt_0: inp % 10,
@@ -67,12 +55,14 @@ impl Password {
     
     pub fn next(&self) -> isize {
         let mut pw = Password::password(self.as_int());
+        let mut carries = false;
         for i in (0..5).rev() {
-            if pw.digit(i + 1) > pw.digit(i) {
+            if pw.digit(i + 1) > pw.digit(i) || carries {
                 pw.set_digit(
                     i,
                     pw.digit(i + 1)
                 );
+                carries = true;
             }
         }
         
@@ -117,29 +107,38 @@ impl Password {
     }
     
     pub fn valid(&self, only_double: bool) -> bool {
-        let mut digit_1 = -1;
-        let mut digit_2 = -1;
+        let mut same: Vec<isize> = Vec::new();
         let mut double_digit = false;
+        let mut last_digit = 10;
         
-        for i in 0..6 {
+        for i in 0..6
+        {
             let digit = self.digit(i);
+            if digit > last_digit { return false; }
             
-            if only_double && digit == digit_1 && digit == digit_2 {
-                return false;
+            if only_double {
+                if digit != last_digit
+                {
+                    if same.len() == 2 {
+                        double_digit = true;
+                    }
+                    same = Vec::new();
+                    same.push(digit);
+                }
+                else
+                {
+                    same.push(digit);
+                }
+            }
+            else if !double_digit && digit == last_digit {
+                double_digit = true;
             }
             
-            if i > 0 {
-                if digit > digit_1 { return false }
-            }
-
-            if !double_digit {
-                if digit == digit_1 { double_digit = true; }
-            }
-            
-            digit_2 = digit_1;
-            digit_1 = digit;
+            last_digit = digit;
         }
-        
+        if only_double && same.len() == 2 {
+            return true;
+        }
         
         double_digit
     }
