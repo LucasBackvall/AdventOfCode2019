@@ -1,5 +1,5 @@
-use std::fmt;
 use std::ops::Range;
+use std::convert::TryInto;
 
 pub fn solve_a(input: Range<isize>) -> isize
 {
@@ -16,137 +16,114 @@ pub fn solve_b(input: Range<isize>) -> isize
 fn run(input: Range<isize>, only_double: bool) -> isize
 {
     let mut sum = 0;
-    let mut lower = input.start;
-
-    while lower < input.end {
-        let pw = Password::password(lower);
-        if pw.valid(only_double) {
-            sum = sum + 1;
+    let mut setup = true;
+    
+    let start_1: u8 = (input.start % 10).try_into().unwrap();
+    let start_2: u8 = ((input.start / 10) % 10).try_into().unwrap();
+    let start_3: u8 = ((input.start / 100) % 10).try_into().unwrap();
+    let start_4: u8 = ((input.start / 1000) % 10).try_into().unwrap();
+    let start_5: u8 = ((input.start / 10000) % 10).try_into().unwrap();
+    let start_6: u8 = ((input.start / 100000) % 10).try_into().unwrap();
+    
+    let end_1: u8 = (input.end % 10).try_into().unwrap();
+    let end_2: u8 = ((input.end / 10) % 10).try_into().unwrap();
+    let end_3: u8 = ((input.end / 100) % 10).try_into().unwrap();
+    let end_4: u8 = ((input.end / 1000) % 10).try_into().unwrap();
+    let end_5: u8 = ((input.end / 10000) % 10).try_into().unwrap();
+    let end_6: u8 = ((input.end / 100000) % 10).try_into().unwrap();
+    
+    let mut last_6 = false;
+    let mut last_5 = false;
+    let mut last_4 = false;
+    let mut last_3 = false;
+    let mut last_2 = false;
+    
+    
+    for d6 in 0..10 as u8 {
+        if setup && d6 < start_6 { continue; }
+        if d6 == end_6 { last_6 = true; }
+        if d6 > end_6 {
+            println!("Break at {}{}{}{}{}{}",
+                d6, d6, d6, d6, d6, d6);
+            break;
         }
         
-        lower = pw.next();
+        for d5 in d6..10 as u8 {
+            if setup && d5 < start_5 { continue; }
+            if last_6 && d5 == end_5 { last_5 = true; }
+            if last_6 && d5 > end_5 {
+                println!("Break at {}{}{}{}{}{}",
+                    d6, d5, d5, d5, d5, d5);
+                break;
+            }
+            
+            for d4 in d5..10 as u8 {
+                if setup && d4 < start_4 { continue; }
+                if last_5 && d4 == end_4 { last_4 = true; }
+                if last_5 && d4 > end_4 {
+                    println!("Break at {}{}{}{}{}{}",
+                        d6, d5, d4, d4, d4, d4);
+                    break;
+                }
+                
+                for d3 in d4..10 as u8 {
+                    if setup && d3 < start_3 { continue }
+                    if last_4 && d3 == end_3 { last_3 = true; }
+                    if last_4 && d3 > end_3 {
+                        println!("Break at {}{}{}{}{}{}",
+                            d6, d5, d4, d3, d3, d3);
+                        break;
+                    }
+                    
+                    for d2 in d3..10 as u8 {
+                        if setup && d2 < start_2 { continue; }
+                        if last_3 && d2 == end_2 { last_2 = true;}
+                        if last_3 && d2 > end_2 {
+                            println!("Break at {}{}{}{}{}{}",
+                                d6, d5, d4, d3, d2, d2);
+                            break;
+                        }
+                        
+                        for d1 in d2..10 as u8 {
+                            if setup && d1 < start_1 { continue; }
+                            if setup {
+                                println!("Started at {}{}{}{}{}{}",
+                                    d6, d5, d4, d3, d2, d1);
+                                setup = false;
+                            }
+                            if last_2 && d1 == end_1 {
+                                println!("Break at {}{}{}{}{}{}",
+                                    d6, d5, d4, d3, d2, d1);
+                                break;
+                            }
+                            
+                            if has_double(d6, d5, d4, d3, d2, d1, only_double) {
+                                sum = sum + 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
     sum
 }
 
-struct Password
-{
-    dgt_0: isize,
-    dgt_1: isize,
-    dgt_2: isize,
-    dgt_3: isize,
-    dgt_4: isize,
-    dgt_5: isize
+fn has_double(d6: u8, d5: u8, d4: u8, d3: u8, d2: u8, d1: u8, only_double: bool) -> bool {
+    only_double && (
+        d6 == d5 && d5 != d4 // XXxxxx
+        || d6 != d5 && d5 == d4 && d4 != d3 // xXXxxx
+        || d5 != d4 && d4 == d3 && d3 != d2 // xxXXxx
+        || d4 != d3 && d3 == d2 && d2 != d1 // xxxXXx
+        || d3 != d2 && d2 == d1 // xxxxXX
+    )
+    || !only_double && (
+        d6 == d5
+        || d5 == d4
+        || d4 == d3
+        || d3 == d2
+        || d2 == d1
+    )
 }
 
-impl Password
-{
-    pub fn password(inp: isize) -> Password {
-        Password {
-            dgt_0: inp % 10,
-            dgt_1: (inp / 10) % 10,
-            dgt_2: (inp / 100) % 10,
-            dgt_3: (inp / 1000) % 10,
-            dgt_4: (inp / 10000) % 10,
-            dgt_5: (inp / 100000) % 10
-        }
-    }
-    
-    pub fn next(&self) -> isize {
-        let mut pw = Password::password(self.as_int());
-        let mut carries = false;
-        for i in (0..5).rev() {
-            if pw.digit(i + 1) > pw.digit(i) || carries {
-                pw.set_digit(
-                    i,
-                    pw.digit(i + 1)
-                );
-                carries = true;
-            }
-        }
-        
-        if pw.as_int() == self.as_int() {
-            return self.as_int() + 1;
-        }
-        
-        pw.as_int()
-    }
-
-    pub fn as_int(&self) -> isize {
-        self.dgt_0 +
-        self.dgt_1 * 10 +
-        self.dgt_2 * 100 +
-        self.dgt_3 * 1000 +
-        self.dgt_4 * 10000 +
-        self.dgt_5 * 100000
-    }
-
-    pub fn set_digit(&mut self, digit: isize, val: isize) {
-        match digit {
-            0 => self.dgt_0 = val,
-            1 => self.dgt_1 = val,
-            2 => self.dgt_2 = val,
-            3 => self.dgt_3 = val,
-            4 => self.dgt_4 = val,
-            5 => self.dgt_5 = val,
-            _ => panic!("Not a valid Password digit.")
-        }
-    }
-
-    pub fn digit(&self, digit: isize) -> isize {
-        match digit {
-            0 => self.dgt_0,
-            1 => self.dgt_1,
-            2 => self.dgt_2,
-            3 => self.dgt_3,
-            4 => self.dgt_4,
-            5 => self.dgt_5,
-            _ => panic!("Not a valid Password digit.")
-        }
-    }
-    
-    pub fn valid(&self, only_double: bool) -> bool {
-        let mut same: Vec<isize> = Vec::new();
-        let mut double_digit = false;
-        let mut last_digit = 10;
-        
-        for i in 0..6
-        {
-            let digit = self.digit(i);
-            if digit > last_digit { return false; }
-            
-            if only_double {
-                if digit != last_digit
-                {
-                    if same.len() == 2 {
-                        double_digit = true;
-                    }
-                    same = Vec::new();
-                    same.push(digit);
-                }
-                else
-                {
-                    same.push(digit);
-                }
-            }
-            else if !double_digit && digit == last_digit {
-                double_digit = true;
-            }
-            
-            last_digit = digit;
-        }
-        if only_double && same.len() == 2 {
-            return true;
-        }
-        
-        double_digit
-    }
-}
-
-
-impl fmt::Display for Password {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_int())
-    }
-}
